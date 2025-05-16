@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Economic Review Station</title>
+<style>
+  body {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    background: #f5f0e6;
+    color: #5a3e1b;
+    margin: 0; padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-size: 2.8rem;
+    margin: 0;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 2px #b08540;
+  }
+  .subtitle {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #a47e3b;
+    margin-top: 4px;
+    font-style: italic;
+  }
+  #game-container {
+    display: flex;
+    gap: 20px;
+    max-width: 900px;
+    width: 100%;
+  }
+  .word-search-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(14, 32px);
+    grid-template-rows: repeat(14, 32px);
+    gap: 4px;
+    background: #fff9e6;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(160, 130, 50, 0.4);
+    user-select: none;
+  }
+  .letter {
+    width: 32px;
+    height: 32px;
+    background: #f3e9d2;
+    border-radius: 8px;
+    box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.9),
+                0 1px 2px rgba(134, 98, 29, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #5a3e1b;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    user-select: none;
+  }
+  .letter:hover {
+    background-color: #d9c58a;
+  }
+  .letter.selected {
+    background-color: #a6d785;
+    color: #285000;
+    font-weight: 900;
+    transform: scale(1.15) translateY(-5px);
+  }
+  .letter.found {
+    background-color: #62a64f;
+    color: white;
+    cursor: default;
+  }
+  .letter.incorrect {
+    animation: shake 0.4s;
+    animation-fill-mode: none;
+    background-color: #f28b82 !important;
+    color: white !important;
+  }
+  @keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+  }
+
+  #word-bank {
+    margin-top: 16px;
+    background: #fff9e6;
+    padding: 14px 16px;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(160, 130, 50, 0.4);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    user-select: none;
+  }
+  #word-bank .word {
+    background: #d7b05f;
+    color: #442f0b;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    box-shadow: 2px 2px 6px rgba(124, 94, 30, 0.5);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  #word-bank .word:hover {
+    background-color: #c4a03a;
+  }
+  #word-bank .word.found {
+    text-decoration: line-through;
+    background-color: #62a64f;
+    color: white;
+    cursor: default;
+  }
+  #word-bank .word.highlighted {
+    background-color: #8abd6a;
+    color: #264c00;
+  }
+
+  .definitions {
+    flex: 0.75;
+    background: #fff9e6;
+    padding: 12px 18px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(160, 130, 50, 0.4);
+    max-height: 360px;
+    overflow-y: auto;
+    font-size: 0.95rem;
+    color: #5a3e1b;
+  }
+  .definitions h2 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .definition-item {
+    margin-bottom: 12px;
+    border-left: 5px solid transparent;
+    padding-left: 10px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    cursor: default;
+  }
+  .definition-item.highlighted {
+    background-color: #d4e8b1;
+    border-left-color: #62a64f;
+  }
+  .definition-item.found {
+    color: #2c5500;
+    font-weight: 700;
+  }
+
+  #controls {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+  }
+  button {
+    background-color: #b48a35;
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 18px;
+    padding: 10px 22px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(108, 77, 16, 0.6);
+    user-select: none;
+    transition: background-color 0.3s ease;
+  }
+  button:hover:not(:disabled) {
+    background-color: #a47e3b;
+  }
+  button:disabled {
+    background-color: #c5b47d;
+    cursor: default;
+  }
+
+  #status {
+    margin-top: 12px;
+    min-height: 20px;
+    font-weight: 700;
+    text-align: center;
+    color: #5a3e1b;
+    font-size: 1.1rem;
+  }
+
+  #score-timer {
+    margin-top: 12px;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #5a3e1b;
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+  }
+
+  /* Win Screen */
+  #win-screen {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(91, 72, 24, 0.85);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    border-radius: 12px;
+  }
+  #win-screen.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #win-screen button {
+    margin-top: 20px;
+    font-size: 1.3rem;
+    padding: 10px 25px;
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Economic Review Station</h1>
+  <div class="subtitle">Coded by Luke</div>
+</div>
+
+<div id="game-container">
+  <div class="word-search-section">
+    <div id="grid" aria-label="Word search grid" role="grid"></div>
+    <div id="word-bank" aria-label="Word bank" role="list"></div>
+    <div id="controls">
+      <button id="start-btn" aria-label="Start game">Start Game</button>
+      <button id="submit-btn" aria-label="Submit selected word" disabled>Submit Word</button>
+    </div>
+    <div id="score-timer">
+      <div>Score: <span id="score">0</span></div>
+      <div>Time: <span id="timer">5:00</span></div>
+    </div>
+    <div id="status" aria-live="polite" aria-atomic="true"></div>
+  </div>
+
+  <div class="definitions" aria-label="Definitions panel">
+    <h2>Definitions</h2>
+  </div>
+</div>
+
+<div id="win-screen" role="dialog" aria-modal="true" aria-labelledby="win-title" aria-describedby="final-time">
+  <div id="win-title">Congratulations!</div>
+  <div id="final-time"></div>
+  <button id="win-restart" aria-label="Restart game">Play Again</button>
+</div>
+
+<script>
+  const words = [
+    { word: "EXPANSION", definition: "A phase of the business cycle when the economy is growing." },
+    { word: "RECESSION", definition: "A period of temporary economic decline during which trade and industrial activity are reduced." },
+    { word: "TROUGH", definition: "The lowest point in the business cycle." },
+    { word: "PEAK", definition: "The highest point in the business cycle before a downturn." },
+    { word: "GDP", definition: "Gross Domestic Product; total value of goods and services produced." },
+    { word: "INFLATION", definition: "General increase in prices and fall in the purchasing value of money." },
+    { word: "DEFLATION", definition: "A decrease in the general price level of goods and services." },
+    { word: "UNEMPLOYMENT", definition: "The state of being without a job while actively looking for one." },
+    { word: "RECOVERY", definition: "Phase following a recession where the economy improves." },
+    { word: "LABOR", definition: "Human work effort used in production." },
+    { word: "DEMAND", definition: "Consumer willingness to buy products at various prices." },
+    { word: "SUPPLY", definition: "Amount of product available to consumers." },
+    { word: "ECONOMY", definition: "The system of production, consumption, and trade." },
+    { word: "PRODUCTIVITY", definition: "Measure of output per unit of input in production." },
+    { word: "JOBS", definition: "Positions of employment." }
+  ];
+
+  const gridSize = 14;
+  const gridElement = document.getElementById('grid');
+  const wordBankElement = document.getElementById('word-bank');
+  const definitionsPanel = document.querySelector('.definitions');
+  const submitBtn = document.getElementById('submit-btn');
+  const startBtn = document.getElementById('start-btn');
+  const feedbackElement = document.getElementById('status');
+  const scoreElement = document.getElementById('score');
+  const timerElement = document.getElementById('timer');
+  const winScreen = document.getElementById('win-screen');
+  const finalTime = document.getElementById('final-time');
+  const winRestart = document.getElementById('win-restart');
+
+  let grid = [];
+  let foundWords = new Set();
+  let selectedCells = [];
+  let gameActive = false;
+  let timer;
+  let timeLeft = 300;
+  let score = 0;
+
+  // Create empty grid
+  function createEmptyGrid() {
+    grid = [];
+    for(let i=0; i<gridSize; i++){
+      const row = new Array(gridSize).fill('');
+      grid.push(row);
+    }
+  }
+
+  // Place words in grid horizontally, vertically, diagonally (forwards & backwards)
+  function placeWords() {
+    words.forEach(({word})=>{
+      let placed = false;
+      let attempts = 0;
+      while(!placed && attempts < 100){
+        attempts++;
+        let direction = Math.floor(Math.random()*8); // 0 to 7 for 8 directions
+        let row, col;
+
+        switch(direction){
+          case 0: // horizontal right
+            row = Math.floor(Math.random()*(gridSize));
+            col = Math.floor(Math.random()*(gridSize - word.length));
+            break;
+          case 1: // horizontal left
+            row = Math.floor(Math.random()*(gridSize));
+            col = Math.floor(Math.random()*(word.length - 1, gridSize));
+            col = Math.floor(Math.random()*(gridSize - 1 - word.length)) + word.length - 1;
+            break;
+          case 2: // vertical down
+            row = Math.floor(Math.random()*(gridSize - word.length));
+            col = Math.floor(Math.random()*(gridSize));
+            break;
+          case 3: // vertical up
+            row = Math.floor(Math.random()*(word.length - 1, gridSize));
+            row = Math.floor(Math.random()*(gridSize - 1 - word.length)) + word.length - 1;
+            col = Math.floor(Math.random()*(gridSize));
+            break;
+          case 4: // diagonal down right
+            row = Math.floor(Math.random()*(gridSize - word.length));
+            col = Math.floor(Math.random()*(gridSize - word.length));
+            break;
+          case 5: // diagonal down left
+            row = Math.floor(Math.random()*(gridSize - word.length));
+            col = Math.floor(Math.random()*(word.length - 1, gridSize));
+            col = Math.floor(Math.random()*(gridSize - 1 - word.length)) + word.length - 1;
+            break;
+          case 6: // diagonal up right
+            row = Math.floor(Math.random()*(word.length - 1, gridSize));
+            row = Math.floor(Math.random()*(gridSize - 1 - word.length)) + word.length - 1;
+            col = Math.floor(Math.random()*(gridSize - word.length));
+            break;
+          case 7: // diagonal up left
+            row = Math.floor(Math.random()*(word.length - 1, gridSize));
+            row = Math.floor(Math.random()*(gridSize - 1 - word.length)) + word.length - 1;
+            col = Math.floor(Math.random()*(word.length - 1, gridSize));
+            col = Math.floor(Math.random()*(gridSize - 1 - word.length)) + word.length - 1;
+            break;
+        }
+
+        if(canPlaceWord(word, row, col, direction)){
+          placeWord(word, row, col, direction);
+          placed = true;
+        }
+      }
+      if(!placed){
+        console.warn('Could not place:', word);
+      }
+    });
+  }
+
+  function canPlaceWord(word, row, col, direction){
+    for(let i=0; i<word.length; i++){
+      let r = row, c = col;
+      switch(direction){
+        case 0: c += i; break;
+        case 1: c -= i; break;
+        case 2: r += i; break;
+        case 3: r -= i; break;
+        case 4: r += i; c += i; break;
+        case 5: r += i; c -= i; break;
+        case 6: r -= i; c += i; break;
+        case 7: r -= i; c -= i; break;
+      }
+      if(r < 0 || r >= gridSize || c < 0 || c >= gridSize) return false;
+      if(grid[r][c] !== '' && grid[r][c] !== word[i]) return false;
+    }
+    return true;
+  }
+
+  function placeWord(word, row, col, direction){
+    for(let i=0; i<word.length; i++){
+      let r = row, c = col;
+      switch(direction){
+        case 0: c += i; break;
+        case 1: c -= i; break;
+        case 2: r += i; break;
+        case 3: r -= i; break;
+        case 4: r += i; c += i; break;
+        case 5: r += i; c -= i; break;
+        case 6: r -= i; c += i; break;
+        case 7: r -= i; c -= i; break;
+      }
+      grid[r][c] = word[i];
+    }
+  }
+
+  // Fill empty spaces with random letters
+  function fillEmptySpaces(){
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for(let r=0; r<gridSize; r++){
+      for(let c=0; c<gridSize; c++){
+        if(grid[r][c] === ''){
+          grid[r][c] = alphabet[Math.floor(Math.random()*alphabet.length)];
+        }
+      }
+    }
+  }
+
+  // Render the grid
+  function renderGrid(){
+    gridElement.innerHTML = '';
+    for(let r=0; r<gridSize; r++){
+      for(let c=0; c<gridSize; c++){
+        const cell = document.createElement('div');
+        cell.classList.add('letter');
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        cell.textContent = grid[r][c];
+        gridElement.appendChild(cell);
+      }
+    }
+  }
+
+  // Render the word bank
+  function renderWordBank(){
+    wordBankElement.innerHTML = '';
+    words.forEach(({word})=>{
+      const wEl = document.createElement('div');
+      wEl.classList.add('word');
+      wEl.textContent = word;
+      wEl.dataset.word = word;
+      wEl.tabIndex = 0;
+      wordBankElement.appendChild(wEl);
+    });
+  }
+
+  // Render definitions
+  function renderDefinitions(){
+    // clear previous except header
+    const existingItems = definitionsPanel.querySelectorAll('.definition-item');
+    existingItems.forEach(item => item.remove());
+
+    words.forEach(({word,definition})=>{
+      const defEl = document.createElement('div');
+      defEl.classList.add('definition-item');
+      defEl.dataset.word = word;
+      defEl.textContent = `${word}: ${definition}`;
+      definitionsPanel.appendChild(defEl);
+
+      // click to highlight word bank and itself
+      defEl.addEventListener('click', () => {
+        highlightWordInBank(word);
+        highlightDefinition(word);
+      });
+    });
+  }
+
+  // Highlight word in word bank on click or definition click
+  function highlightWordInBank(word){
+    const allWords = wordBankElement.querySelectorAll('.word');
+    allWords.forEach(w => w.classList.remove('highlighted'));
+    const target = wordBankElement.querySelector(`.word[data-word="${word}"]`);
+    if(target) target.classList.add('highlighted');
+  }
+
+  // Highlight definition in definitions panel
+  function highlightDefinition(word){
+    const allDefs = definitionsPanel.querySelectorAll('.definition-item');
+    allDefs.forEach(d => d.classList.remove('highlighted'));
+    const target = definitionsPanel.querySelector(`.definition-item[data-word="${word}"]`);
+    if(target) target.classList.add('highlighted');
+  }
+
+  // Clear all highlights
+  function clearHighlights(){
+    wordBankElement.querySelectorAll('.word').forEach(w => w.classList.remove('highlighted'));
+    definitionsPanel.querySelectorAll('.definition-item').forEach(d => d.classList.remove('highlighted'));
+  }
+
+  // Handle letter click (toggle select)
+  gridElement.addEventListener('click', e => {
+    if(!gameActive) return;
+    if(!e.target.classList.contains('letter')) return;
+
+    const cell = e.target;
+    if(cell.classList.contains('found')) return;
+
+    if(selectedCells.includes(cell)){
+      cell.classList.remove('selected');
+      selectedCells = selectedCells.filter(c => c !== cell);
+    } else {
+      // Add letter and jump animation
+      cell.classList.add('selected');
+      cell.style.transform = 'translateY(-8px)';
+      setTimeout(() => {
+        cell.style.transform = '';
+      }, 200);
+      selectedCells.push(cell);
+    }
+    updateSelectedWord();
+  });
+
+  // Keep track of the currently selected word string
+  let currentSelectedWord = '';
+
+  function updateSelectedWord(){
+    currentSelectedWord = selectedCells.map(c => c.textContent).join('');
+    submitBtn.disabled = currentSelectedWord.length === 0;
+  }
+
+  submitBtn.addEventListener('click', () => {
+    if(!gameActive) return;
+
+    const wordAttempt = currentSelectedWord.toUpperCase();
+
+    if(words.some(({word}) => word === wordAttempt && !foundWords.has(word))){
+      // Found a word!
+      foundWords.add(wordAttempt);
+      score += 10;
+      scoreElement.textContent = score;
+
+      // Mark letters as found
+      selectedCells.forEach(cell => {
+        cell.classList.add('found');
+        cell.classList.remove('selected');
+      });
+
+      // Cross out in word bank
+      const wEl = wordBankElement.querySelector(`.word[data-word="${wordAttempt}"]`);
+      if(wEl){
+        wEl.classList.add('found');
+        wEl.classList.remove('highlighted');
+      }
+
+      // Show definition and highlight
+      highlightDefinition(wordAttempt);
+      highlightWordInBank(wordAttempt);
+
+      feedbackElement.textContent = `"${wordAttempt}" found!`;
+      feedbackElement.style.color = '#285000';
+
+      // Clear selection
+      selectedCells = [];
+      currentSelectedWord = '';
+      submitBtn.disabled = true;
+
+      checkWin();
+
+    } else {
+      // Incorrect word
+      feedbackElement.textContent = "Try Again";
+      feedbackElement.style.color = '#b00000';
+      shakeSelectedCells();
+      clearSelection();
+    }
+  });
+
+  function shakeSelectedCells() {
+    selectedCells.forEach(cell => {
+      cell.classList.add('incorrect');
+    });
+    setTimeout(() => {
+      selectedCells.forEach(cell => {
+        cell.classList.remove('incorrect');
+        cell.style.transform = '';
+      });
+    }, 400);
+  }
+
+  function clearSelection(){
+    selectedCells.forEach(cell => {
+      cell.classList.remove('selected');
+      cell.style.transform = '';
+    });
+    selectedCells = [];
+    currentSelectedWord = '';
+    submitBtn.disabled = true;
+  }
+
+  // Word bank click highlights definition
+  wordBankElement.addEventListener('click', e => {
+    if(e.target.classList.contains('word')){
+      const word = e.target.dataset.word;
+      highlightDefinition(word);
+      highlightWordInBank(word);
+    }
+  });
+
+  // Timer
+  function startTimer(){
+    timeLeft = 300; // 5 minutes
+    timerElement.textContent = "5:00";
+
+    timer = setInterval(() => {
+      if(timeLeft <= 0){
+        clearInterval(timer);
+        endGame(false);
+        return;
+      }
+      timeLeft--;
+      const minutes = Math.floor(timeLeft/60);
+      const seconds = timeLeft % 60;
+      timerElement.textContent = `${minutes}:${seconds.toString().padStart(2,'0')}`;
+    }, 1000);
+  }
+
+  // Check if all words found
+  function checkWin(){
+    if(foundWords.size === words.length){
+      clearInterval(timer);
+      endGame(true);
+    }
+  }
+
+  // Show win screen
+  function endGame(won){
+    gameActive = false;
+    submitBtn.disabled = true;
+    startBtn.disabled = false;
+
+    // Highlight not found words in word bank
+    words.forEach(({word})=>{
+      if(!foundWords.has(word)){
+        const wEl = wordBankElement.querySelector(`.word[data-word="${word}"]`);
+        if(wEl) wEl.classList.add('found');
+      }
+    });
+
+    if(won){
+      winScreen.querySelector('#win-title').textContent = "Congratulations!";
+      const takenSeconds = 300 - timeLeft;
+      const min = Math.floor(takenSeconds/60);
+      const sec = takenSeconds % 60;
+      finalTime.textContent = `You finished in ${min}m ${sec}s!`;
+    } else {
+      winScreen.querySelector('#win-title').textContent = "Time's up!";
+      finalTime.textContent = "Better luck next time!";
+    }
+    winScreen.classList.add('show');
+  }
+
+  // Start game button
+  startBtn.addEventListener('click', () => {
+    resetGame();
+    gameActive = true;
+    startBtn.disabled = true;
+    submitBtn.disabled = true;
+    feedbackElement.textContent = '';
+    startTimer();
+  });
+
+  // Restart from win screen
+  winRestart.addEventListener('click', () => {
+    winScreen.classList.remove('show');
+    resetGame();
+    startBtn.disabled = false;
+    submitBtn.disabled = true;
+    feedbackElement.textContent = '';
+  });
+
+  function resetGame(){
+    foundWords.clear();
+    selectedCells = [];
+    currentSelectedWord = '';
+    score = 0;
+    scoreElement.textContent = score;
+    timeLeft = 300;
+    timerElement.textContent = "5:00";
+    clearHighlights();
+    createEmptyGrid();
+    placeWords();
+    fillEmptySpaces();
+    renderGrid();
+    renderWordBank();
+    renderDefinitions();
+    clearSelection();
+  }
+
+  // Initial setup
+  createEmptyGrid();
+  placeWords();
+  fillEmptySpaces();
+  renderGrid();
+  renderWordBank();
+  renderDefinitions();
+</script>
+</body>
+</html>
